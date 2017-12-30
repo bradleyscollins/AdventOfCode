@@ -1,5 +1,5 @@
-# Exercise: http://adventofcode.com/2017/day/1
-# Input: http://adventofcode.com/2017/day/1/input
+# Puzzle: http://adventofcode.com/2017/day/1
+# Input:  http://adventofcode.com/2017/day/1/input
 
 # --- Day 1: Inverse Captcha ---
 # 
