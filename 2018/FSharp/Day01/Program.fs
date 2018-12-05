@@ -52,6 +52,7 @@
 // all of the changes in frequency have been applied?
    
 // Your puzzle answer was 590.
+
 // --- Part Two ---
    
 // You notice that the device repeats the same frequency change list over 

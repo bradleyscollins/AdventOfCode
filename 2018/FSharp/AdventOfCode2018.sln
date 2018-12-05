@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Day01", "Day01\Day01.fsproj", "{E27EE555-C37A-405B-8861-9E21A339F7DD}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Day01", "Day01\Day01.fsproj", "{E27EE555-C37A-405B-8861-9E21A339F7DD}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Day02", "Day02\Day02.fsproj", "{CD31A08C-AE2F-4EBA-8DA8-DFDFF160314D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{E27EE555-C37A-405B-8861-9E21A339F7DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E27EE555-C37A-405B-8861-9E21A339F7DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E27EE555-C37A-405B-8861-9E21A339F7DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD31A08C-AE2F-4EBA-8DA8-DFDFF160314D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD31A08C-AE2F-4EBA-8DA8-DFDFF160314D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD31A08C-AE2F-4EBA-8DA8-DFDFF160314D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD31A08C-AE2F-4EBA-8DA8-DFDFF160314D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
