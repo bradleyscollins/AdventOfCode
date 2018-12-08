@@ -34,3 +34,9 @@
 #
 # Your puzzle input is 289326.
 
+input = 289326
+next_whole_square_root = (input ** 0.5).ceil
+next_odd_square_root = next_whole_square_root.odd? ?
+                       next_whole_square_root : 
+                       next_whole_square_root + 1
+
