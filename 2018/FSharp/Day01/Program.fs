@@ -6,9 +6,12 @@ let calcResult1 (changes : int list) =
 let calcResult2 (changes : int list) =
     Seq.initInfinite (fun _ -> changes)
     |> Seq.concat
-    |> Seq.scan (fun (x :: xs) change -> (change + x) :: x :: xs) [0]
-    |> Seq.find (fun (x :: xs) -> xs |> List.contains x)
-    |> Seq.head
+    |> Seq.scan (fun (current, prev) delta ->
+                    let next = current + delta
+                    next, (prev |> Set.add current))
+                (0, Set [])
+    |> Seq.find (fun (current, prev) -> prev |> Set.contains current)
+    |> fst
 
 [<EntryPoint>]
 let main argv =
@@ -21,8 +24,7 @@ let main argv =
     let result1 = calcResult1 input // 590
     printfn "Result 1: %d" result1
 
-    let result2 = calcResult2 input // Takes a long time, but
-                                    // eventually produces 83445
+    let result2 = calcResult2 input // 83445
     printfn "Result 2: %A" result2
 
     printfn "\nPress any key ..."
