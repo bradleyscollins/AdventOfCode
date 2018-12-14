@@ -21,11 +21,6 @@ Array.prototype.countBy = function (f) {
 };
 
 function charCounts(str) {
-  // return str.split('').reduce((acc, char) => {
-  //   const count = acc[char] || 0;
-  //   acc[char] = count + 1;
-  //   return acc;
-  // }, {});
   return str.split('').countBy(x => x);
 }
 
