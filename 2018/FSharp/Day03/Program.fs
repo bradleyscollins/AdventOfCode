@@ -1,42 +1,26 @@
 ﻿open System
 open System.Text.RegularExpressions
 
-[<Struct>]
-type Point = { X : int; Y : int }
+type Point = int * int
+
+module Point =
+    let x point = fst point
+    let y point = snd point
 
 [<Struct>]
 type Rectangle = { Origin : Point; Width : int; Height : int }
 
 module Rectangle =
-    let left rect = rect.Origin.X
-    let right rect = rect.Origin.X + rect.Width - 1
-    let top rect = rect.Origin.Y
-    let bottom rect = rect.Origin.Y + rect.Height - 1
+    let left rect = rect.Origin |> Point.x
+    let top rect = rect.Origin |> Point.y
+    let right rect = left rect + rect.Width - 1
+    let bottom rect = top rect + rect.Height - 1
 
-    let area rect = rect.Width * rect.Height
-
-    let isLeftOf rect2 rect1 = (right rect1) < (left rect2)
-    let isRightOf rect2 rect1 = (left rect1) > (right rect2)
-    let isAbove rect2 rect1 = (bottom rect1) < (top rect2)
-    let isBelow rect2 rect1 = (top rect1) > (bottom rect2)
-
-    let overlaps rect2 rect1 = not (rect1 |> isLeftOf rect2
-                                    || rect1 |> isRightOf rect2
-                                    || rect1 |> isAbove rect2
-                                    || rect1 |> isBelow rect2)
-
-    let intersect rect2 rect1 =
-        if rect1 |> overlaps rect2 then
-            let rects = [rect1; rect2]
-            let left' = rects |> Seq.map left |> Seq.max
-            let right' = rects |> Seq.map right |> Seq.min
-            let top' = rects |> Seq.map top |> Seq.max
-            let bottom' = rects |> Seq.map bottom |> Seq.min
-            let width = right' - left' + 1
-            let height = bottom' - top' + 1
-            Some { Origin = { X = left'; Y = top' };
-                   Width = width; Height = height }
-        else None
+    let points (rect : Rectangle) =
+        seq { for x in left rect .. right rect do
+                for y in top rect .. bottom rect do
+                    yield x, y }
+        |> Seq.toList
 
 [<Struct>]
 type Claim = { Id : int; Rectangle : Rectangle }
@@ -50,33 +34,51 @@ module Claim =
             |> Regex
         let m = regex.Match s
         if m.Success then
-            let id = int m.Groups.["id"].Value
-            let x = int m.Groups.["x"].Value
-            let y = int m.Groups.["y"].Value
-            let width = int m.Groups.["w"].Value
-            let height = int m.Groups.["h"].Value
-
-            Some { Id = id; Rectangle = { Origin = { X = x; Y = y }
-                                          Width = width; Height = height } }
+            Some { Id = int m.Groups.["id"].Value;
+                   Rectangle = { Origin = (int m.Groups.["x"].Value,
+                                           int m.Groups.["y"].Value)
+                                 Width = int m.Groups.["w"].Value
+                                 Height = int m.Groups.["h"].Value } }
         else None
+
+type Fabric = int [,]
+
+module Fabric =
+    let generate (claims : Claim seq) =
+        let rects = claims |> Seq.map Claim.rectangle
+        let maxRight = rects |> Seq.map Rectangle.right |> Seq.max
+        let maxBottom = rects |> Seq.map Rectangle.bottom |> Seq.max
+        Array2D.zeroCreate<int> (maxRight + 2) (maxBottom + 2)
+    
+    let mark (fabric : Fabric) ((x, y) : Point) =
+        fabric.[x,y] <- fabric.[x,y] + 1
+
+    let claim (fabric : Fabric) (claim : Claim) =
+        claim
+        |> Claim.rectangle
+        |> Rectangle.points
+        |> List.iter (mark fabric)
 
 module String =
     let trim (s : string) = s.Trim ()
 
+module Array2D =
+    let flatten array =
+        let len1 = array |> Array2D.length1
+        let len2 = array |> Array2D.length2
+        seq { for j in 0 .. len2 - 1 do
+                for i in 0 .. len1 - 1 do
+                    yield array.[i,j] }
+        |> Seq.toArray
+
 let calculateOverlap (claims : Claim list) =
-    let rec calc overlap rects =
-        match rects with
-        | rect :: others ->
-            let overlap' = others
-                           |> Seq.choose (Rectangle.intersect rect)
-                           |> Seq.map Rectangle.area
-                           |> Seq.sum
-            calc (overlap + overlap') others
-        | _ -> overlap
+    let fabric = claims |> Fabric.generate
+    claims |> Seq.iter (Fabric.claim fabric)
     
-    claims
-    |> List.map Claim.rectangle
-    |> calc 0
+    fabric
+    |> Array2D.flatten
+    |> Seq.filter (fun x -> x > 1)
+    |> Seq.length
 
 
 [<EntryPoint>]
