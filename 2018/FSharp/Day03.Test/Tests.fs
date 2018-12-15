@@ -49,8 +49,7 @@ module Fabric =
             { Id = 3; Rectangle = { Origin = (5, 5); Width = 2; Height = 2 } } ]
 
         let expected = Array2D.zeroCreate<int> 8 8
-        let actual = claims |> Fabric.generate
-        test <@ expected = actual @>
+        test <@ claims |> Fabric.generate = expected @>
 
     [<Fact>]
     let ``claims points in fabric`` () =
@@ -59,7 +58,7 @@ module Fabric =
             { Id = 2; Rectangle = { Origin = (3, 1); Width = 4; Height = 4 } }
             { Id = 3; Rectangle = { Origin = (5, 5); Width = 2; Height = 2 } } ]
 
-        let fabric = Array2D.zeroCreate<int> 8 8
+        let fabric = claims |> Fabric.generate
         let expected = array2D [[0; 0; 0; 0; 0; 0; 0; 0]
                                 [0; 0; 0; 1; 1; 1; 1; 0]
                                 [0; 0; 0; 1; 1; 1; 1; 0]
@@ -68,10 +67,25 @@ module Fabric =
                                 [0; 1; 1; 1; 1; 1; 1; 0]
                                 [0; 1; 1; 1; 1; 1; 1; 0]
                                 [0; 0; 0; 0; 0; 0; 0; 0]]
-        claims |> Seq.iter (Fabric.claim fabric)
         
-        test <@ fabric = expected @>
+        test <@ fabric |> Fabric.makeClaims claims = expected @>
 
+    [<Fact>]
+    let ``determines whether a claim is intact`` () =
+        let claim1 =
+            { Id = 1; Rectangle = { Origin = (1, 3); Width = 4; Height = 4 } }
+        let claim2 =
+            { Id = 2; Rectangle = { Origin = (3, 1); Width = 4; Height = 4 } }
+        let claim3 =
+            { Id = 3; Rectangle = { Origin = (5, 5); Width = 2; Height = 2 } }
+        let claims = [claim1; claim2; claim3]
+
+        let fabric = claims |> Fabric.generate |> Fabric.makeClaims claims
+        
+        
+        test <@ fabric |> Fabric.isIntact claim1 = false @>
+        test <@ fabric |> Fabric.isIntact claim2 = false @>
+        test <@ fabric |> Fabric.isIntact claim3 = true @>
         
 [<Fact>]
 let ``identifies the number of overlapping square inches of fabric`` () =
@@ -80,3 +94,11 @@ let ``identifies the number of overlapping square inches of fabric`` () =
         { Id = 2; Rectangle = { Origin = (3, 1); Width = 4; Height = 4 } }
         { Id = 3; Rectangle = { Origin = (5, 5); Width = 2; Height = 2 } } ]
     test <@ calculateOverlap claims = 4 @>
+        
+[<Fact>]
+let ``identifies the IDs of claims still intact after all claims are made`` () =
+    let claims = [
+        { Id = 1; Rectangle = { Origin = (1, 3); Width = 4; Height = 4 } }
+        { Id = 2; Rectangle = { Origin = (3, 1); Width = 4; Height = 4 } }
+        { Id = 3; Rectangle = { Origin = (5, 5); Width = 2; Height = 2 } } ]
+    test <@ findIntactClaims claims = [3] @>
