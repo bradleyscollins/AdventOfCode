@@ -20,6 +20,15 @@ Array.prototype.countBy = function (f) {
   }, {});
 };
 
+Array.prototype.take = function (n) {
+  return this.slice(0, n);
+};
+
+Array.prototype.zip = function (other) {
+  return this.take(Math.min(this.length, other.length))
+    .map((x, i) => [x, other[i]]);
+};
+
 function charCounts(str) {
   return str.split('').countBy(x => x);
 }
@@ -31,7 +40,46 @@ function calcChecksum(codes) {
   return codesWithExactly2.length * codesWithExactly3.length;
 }
 
+function findCommonLetters(codes) { 
+  function diffBy1(code1, code2) {
+    const numberDifferent = code1.split('').zip(code2.split(''))
+      .map(([letter1, letter2]) => letter1 === letter2)
+      .filter(areEqual => !areEqual)
+      .length
+    return numberDifferent === 1;
+  }
+
+  function findFabricBoxCodes(codes, found) {
+    if (codes.length < 2) {
+      return found;
+    } else {
+      const [code, ...rest] = codes;
+      rest.forEach(otherCode => {
+        if (diffBy1(code, otherCode)) {
+          found.add(code);
+          found.add(otherCode);
+        }
+      });
+      return findFabricBoxCodes(rest, found);
+    }
+  }
+
+  const fabricCodes = findFabricBoxCodes(codes, new Set());
+  const [code1, code2] = Array.from(fabricCodes);
+  return code1.split('').zip(code2.split(''))
+    .filter(([letter1, letter2]) => letter1 === letter2)
+    .map(([letter, _]) => letter)
+    .join('');
+}
+
 function test() {
+  console.log("'ababab'.split('').groupBy(x => x) has b : [b,b,b]",
+    'ababab'.split('').groupBy(x => x)['b'].every(x => x === 'b'));
+
+  console.log("'ababab'.split('').groupBy(x => x) has b : 3",
+    'ababab'.split('').countBy(x => x)['b'] === 3,
+    'ababab'.split('').countBy(x => x));
+  
   var counts = charCounts('ababab');
   console.log("'ababab' has 3 a's: ", counts.a === 3);
   console.log("'ababab' has 3 b's: ", counts.b === 3);
@@ -43,12 +91,9 @@ function test() {
   var checksum = calcChecksum(codes)
   console.log("checksum for codes is 12: ", checksum === 12);
 
-  console.log("'ababab'.split('').groupBy(x => x) has b : [b,b,b]",
-    'ababab'.split('').groupBy(x => x)['b'].every(x => x === 'b'));
-
-    console.log("'ababab'.split('').groupBy(x => x) has b : 3",
-    'ababab'.split('').countBy(x => x)['b'] === 3,
-    'ababab'.split('').countBy(x => x));
+  codes = ["abcde","fghij","klmno","pqrst","fguij","axcye","wvxyz"];
+  console.log("Common letters are 'fgij'?  ",
+    findCommonLetters(codes) === 'fgij');
 }
 
 function run(argv) {
@@ -65,4 +110,6 @@ function run(argv) {
                 .filter(x => x != '');
 
   console.log('What is the checksum? ', calcChecksum(input));
+  console.log('What letters are common between the two correct box IDs? ',
+    findCommonLetters(input));
 }
