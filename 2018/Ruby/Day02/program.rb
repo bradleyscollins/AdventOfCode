@@ -9,10 +9,10 @@ class App
     input = load_input('./input.txt')
     
     result1 = ChecksumCalculator.new.calc(input)
-    puts "Result 1: #{result1}"
+    puts "What is the checksum for your list of box IDs? #{result1}"
 
-    result2 = '---' #DuplicateFrequencyFinder.new.calc(input)
-    puts "Result 2: #{result2}"
+    result2 = CommonLetterFinder.new.find(input)
+    puts "What letters are common between the two correct box IDs? #{result2}"
   end
 end
 
