@@ -52,9 +52,12 @@ build-iPhoneSimulator/
 
 # Visual Studio
 *.suo
-obj
-bin
+obj/
+bin/
 *.fsproj.user
 
 # Ionide
-.ionide
+.ionide/
+
+# Node
+node_modules/
