@@ -55,6 +55,7 @@ build-iPhoneSimulator/
 obj/
 bin/
 *.fsproj.user
+.vs/
 
 # Ionide
 .ionide/
