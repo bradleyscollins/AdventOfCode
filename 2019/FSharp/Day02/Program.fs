@@ -54,16 +54,35 @@ let execute intcode =
     |> Seq.fold executeOn program
     |> toIntcode
 
-let run intcode =
+let runWith noun verb intcode =
     intcode
-    |> initializeWith [ (1, 12); (2, 2) ]
+    |> initializeWith [ (1, noun); (2, verb) ]
     |> execute
     |> parse
     |> Array.head
+
+let run intcode = intcode |> runWith 12 2
+
+let yields output intcode =
+    let rec tryRunWith noun verb =
+        let noun', verb' = if noun > 99
+                           then 0, verb + 1
+                           else noun, verb
+
+        if intcode |> runWith noun' verb' = output
+        then noun', verb'
+        else tryRunWith (noun' + 1) verb'
+    
+    tryRunWith 0 0
 
 [<EntryPoint>]
 let main argv =
     let intcode = (File.ReadAllText "input.txt").Trim ()
 
-    printfn "Position 0: %A" (run intcode)
+    printfn "Output of noun (12) and verb (2): %A" (run intcode)
+    
+    intcode
+    |> yields 19690720
+    ||> printfn "Inputs needed to result in output of 19690720: noun (%d), verb (%d)"
+    
     0 // return an integer exit code
