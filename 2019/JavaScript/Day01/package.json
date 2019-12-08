@@ -1,0 +1,17 @@
+{
+  "name": "day01",
+  "version": "1.0.0",
+  "description": "Advent of Code 2019, Day 1",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node_modules/mocha/bin/mocha"
+  },
+  "author": "Brad Collins",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^6.2.2"
+  }
+}
