@@ -4,6 +4,13 @@ open System
 open System.IO
 open System.Text.RegularExpressions
 
+[<AutoOpen>]
+module Functions =
+    let flip f y x = f x y
+
+module Tuple2 =
+    let cons x y = x, y
+
 module String =
     let split (delimiter : string) (s : string) = s.Split delimiter
     let trim (s : string) = s.Trim ()
@@ -24,11 +31,19 @@ module Seq =
         |> transform []
         |> Option.map List.rev
 
-type Segment =
-| Up of int
-| Down of int
-| Left of int
-| Right of int
+
+type Direction = Up | Down | Left | Right
+
+module Direction =
+    let parse = function
+                | "R" -> Some Right
+                | "L" -> Some Left
+                | "U" -> Some Up
+                | "D" -> Some Down
+                | _ -> None
+
+
+type Segment = Direction * int
 
 module Segment =
     let parse str =
@@ -37,21 +52,26 @@ module Segment =
 
         match result.Success with
         | true -> 
-            let length = int <| result.Groups.["length"].Value
-            let direction = result.Groups.["direction"].Value
+            let direction = Direction.parse result.Groups.["direction"].Value
+            let length = Some (int result.Groups.["length"].Value)
+            
+            (direction, length)
+            ||> Option.map2 Tuple2.cons
 
-            match direction with
-            | "R" -> Some (Right length)
-            | "L" -> Some (Left  length)
-            | "U" -> Some (Up    length)
-            | "D" -> Some (Down  length)
-            | _ -> None
         | _ -> None
+
+module Segments =
+    let parse str =
+        String.split "," str
+        |> Seq.map Segment.parse
+        |> Seq.sequence
 
 
 type Point = int * int
 
 module Point =
+    let centralPort = 0,0
+
     let up    (x, y) distance = (x,            y + distance)
     let down  (x, y) distance = (x,            y - distance)
     let right (x, y) distance = (x + distance, y           )
@@ -61,55 +81,94 @@ module Point =
         abs (x2 - x1) + abs (y2 - y1)
 
 module Points =
-    let along segment startingAt =
-        let move, distance =
-            match segment with
-            | Up by    -> Point.up, by
-            | Down by  -> Point.down, by
-            | Left by  -> Point.left, by
-            | Right by -> Point.right, by
+    let along (direction, distance) startingAt =
+        let move = match direction with
+                   | Up    -> Point.up
+                   | Down  -> Point.down
+                   | Left  -> Point.left
+                   | Right -> Point.right
 
         [1 .. distance]
         |> List.map (move startingAt)
-        
 
-type Wire = Segment list
+    let distanceTo point points =
+        points
+        |> List.tryFindIndex ((=) point)
+        |> Option.map ((+) 1)
+        |> Option.defaultValue Int32.MaxValue
+
+
+type Wire = Point list // not including central port
 
 module Wire =
     let empty = []
-    let parse str =
-        String.split "," str
-        |> Seq.map Segment.parse
-        |> Seq.sequence
 
-    let allPointsStartingFrom startingAt wire =
-        wire
+    let fromSegments segments =
+        segments
         |> List.fold
             (fun points segment ->
                 let startingPoint = points |> List.last
                 let segmentPoints = startingPoint |> Points.along segment
                 points @ segmentPoints)
-            [ startingAt ]
+            [ Point.centralPort ]
         |> List.tail
 
+    let intersections wire1 wire2 =
+        Set.intersect (Set.ofList wire1) (Set.ofList wire2)
 
-let calcDistanceToNearestIntersection wire1 wire2 =
-    let centralPort = 0,0
-    let pointsInWire1 = wire1
-                        |> Wire.parse
-                        |> Option.defaultValue Wire.empty
-                        |> Wire.allPointsStartingFrom centralPort
-                        |> Set.ofList
-    let pointsInWire2 = wire2
-                        |> Wire.parse
-                        |> Option.defaultValue Wire.empty
-                        |> Wire.allPointsStartingFrom centralPort
-                        |> Set.ofList
-    let intersections = Set.intersect pointsInWire1 pointsInWire2
+    let distanceBefore point = List.tryFindIndex ((=) point)
+
+    let chopBefore point wire = wire
+                                |> distanceBefore point
+                                |> Option.map ((flip List.take) wire)
+                                |> Option.defaultValue wire
+
+    let circuit wire1 wire2 point =
+        let choppedWire1 = wire1 |> chopBefore point
+        let choppedWire2 = wire2 |> chopBefore point
+        
+        choppedWire1 @ (point :: (List.rev choppedWire2))
+
+    let circuits wire1 wire2 =
+        let intersections' = intersections wire1 wire2
+        let circuitAt = circuit wire1 wire2
+
+        intersections'
+        |> Seq.map circuitAt
+
+    let length = List.length
+
+
     
-    intersections
-    |> Seq.map (Point.manhattanDistanceTo centralPort)
+let calcManhattanDistanceToNearestIntersection wire1 wire2 =
+    let wire1' = wire1
+                 |> Segments.parse
+                 |> Option.map Wire.fromSegments
+                 |> Option.defaultValue Wire.empty
+    let wire2' = wire2
+                 |> Segments.parse
+                 |> Option.map Wire.fromSegments
+                 |> Option.defaultValue Wire.empty
+
+    Wire.intersections wire1' wire2'
+    |> Seq.map (Point.manhattanDistanceTo Point.centralPort)
     |> Seq.min
+
+let calcDistanceOfShortestCircuit wire1 wire2 =
+    let wire1' = wire1
+                 |> Segments.parse
+                 |> Option.map Wire.fromSegments
+                 |> Option.defaultValue Wire.empty
+    let wire2' = wire2
+                 |> Segments.parse
+                 |> Option.map Wire.fromSegments
+                 |> Option.defaultValue Wire.empty
+
+    Wire.circuits wire1' wire2'
+    |> Seq.map Wire.length
+    |> Seq.map ((+) 1)
+    |> Seq.min
+
 
 [<EntryPoint>]
 let main argv =
@@ -120,8 +179,11 @@ let main argv =
 
     match wires with
     | wire1 :: wire2 :: _ ->
-        calcDistanceToNearestIntersection wire1 wire2
+        calcManhattanDistanceToNearestIntersection wire1 wire2
         |> printfn "Manhattan distance to nearest intersection: %d"
+
+        calcDistanceOfShortestCircuit wire1 wire2
+        |> printfn "Distance of shortest circuit: %d"
 
     | _ -> eprintfn "Bad input!"
 
