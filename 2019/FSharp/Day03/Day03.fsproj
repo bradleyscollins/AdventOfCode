@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <None Include="description.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Include="input.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
