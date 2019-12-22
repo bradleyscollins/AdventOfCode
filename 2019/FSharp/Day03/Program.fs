@@ -116,28 +116,13 @@ module Wire =
     let intersections wire1 wire2 =
         Set.intersect (Set.ofList wire1) (Set.ofList wire2)
 
-    let distanceBefore point = List.tryFindIndex ((=) point)
+    let distanceTo point wire = wire
+                                |> List.tryFindIndex ((=) point)
+                                |> Option.map ((+) 1)
 
-    let chopBefore point wire = wire
-                                |> distanceBefore point
-                                |> Option.map ((flip List.take) wire)
-                                |> Option.defaultValue wire
-
-    let circuit wire1 wire2 point =
-        let choppedWire1 = wire1 |> chopBefore point
-        let choppedWire2 = wire2 |> chopBefore point
-        
-        choppedWire1 @ (point :: (List.rev choppedWire2))
-
-    let circuits wire1 wire2 =
-        let intersections' = intersections wire1 wire2
-        let circuitAt = circuit wire1 wire2
-
-        intersections'
-        |> Seq.map circuitAt
-
-    let length = List.length
-
+    let circuitDistance wire1 wire2 point = [wire1; wire2]
+                                            |> Seq.choose (distanceTo point)
+                                            |> Seq.sum
 
     
 let calcManhattanDistanceToNearestIntersection wire1 wire2 =
@@ -164,9 +149,8 @@ let calcDistanceOfShortestCircuit wire1 wire2 =
                  |> Option.map Wire.fromSegments
                  |> Option.defaultValue Wire.empty
 
-    Wire.circuits wire1' wire2'
-    |> Seq.map Wire.length
-    |> Seq.map ((+) 1)
+    Wire.intersections wire1' wire2'
+    |> Seq.map (Wire.circuitDistance wire1' wire2')
     |> Seq.min
 
 

@@ -133,21 +133,21 @@ let ``Wire fromSegments builds a wire from a list of segments`` () =
     segments |> Wire.fromSegments =! expected
 
 
-let ``Wire distanceBefore test cases`` =
+let ``Wire distanceTo test cases`` =
     [|
-        [Right, 8; Up, 5; Left, 5; Down, 3], 8,3, (Some 10)
+        [Right, 8; Up, 5; Left, 5; Down, 3], 8,3, (Some 11)
         [Right, 8; Up, 5; Left, 5; Down, 3], 2,2, None
-        [Right, 8; Up, 5; Left, 5; Down, 3], 3,2, (Some 20)
+        [Right, 8; Up, 5; Left, 5; Down, 3], 3,2, (Some 21)
         [Right, 8; Up, 5; Left, 5; Down, 3], 5,8, None
     |]
     |> Seq.map Tuple4.toObjArray
 
 [<Theory>]
-[<MemberData("Wire distanceBefore test cases")>]
-let ``Wire distanceBefore returns the distance before reaching the given point in a wire or None if the point is not there`` segments x y expected =
+[<MemberData("Wire distanceTo test cases")>]
+let ``Wire distanceTo returns the distance to the given point in a wire or None if the point is not there`` segments x y expected =
     let wire = Wire.fromSegments segments
     let point = x,y
-    wire |> Wire.distanceBefore point =! expected
+    wire |> Wire.distanceTo point =! expected
 
 
 [<Theory>]
