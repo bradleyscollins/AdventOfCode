@@ -26,4 +26,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Day04\Day04.fsproj" />
+  </ItemGroup>
+
 </Project>
