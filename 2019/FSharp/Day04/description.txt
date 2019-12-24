@@ -24,3 +24,6 @@ How many different passwords within the range given in your puzzle input meet
 these criteria?
 
 Your puzzle input is 271973-785961.
+
+
+Your puzzle answer was 925.
