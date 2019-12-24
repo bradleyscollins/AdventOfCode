@@ -16,6 +16,22 @@ module Password =
         |> Seq.windowed 2
         |> Seq.exists (Array.distinct >> Array.length >> ((=) 1))
 
+    let consecutiveDigits password =
+        let accumulate x acc =
+            match acc with
+            | (digit, count) :: tail when digit = x ->
+                (digit, count + 1) :: tail
+            | _ -> (x, 1) :: acc
+
+        password
+        |> String.characters
+        |> Seq.foldBack accumulate <| []
+
+    let containsAProperDouble password =
+        password
+        |> consecutiveDigits
+        |> Seq.exists (snd >> ((=) 2))
+
     let neverDecreases password =
         password
         |> String.characters
@@ -26,6 +42,11 @@ module Password =
     let isValid password =
         isCorrectLength password
         && containsADouble password
+        && neverDecreases password
+
+    let isValid2 password =
+        isCorrectLength password
+        && containsAProperDouble password
         && neverDecreases password
 
     let next password =
@@ -53,13 +74,14 @@ module Password =
 
         makeNeverDescending [] next'
 
-let validPasswordsInRange low high =
+
+let validPasswordsInRangeWith isValid low high =
     let high' = Int32.Parse high
     let rec f acc password =
         if Int32.Parse password > high'
         then acc
         else
-            let acc' = if password |> Password.isValid
+            let acc' = if password |> isValid
                        then (password :: acc)
                        else acc
             f acc' (password |> Password.next)
@@ -68,8 +90,12 @@ let validPasswordsInRange low high =
 
 [<EntryPoint>]
 let main argv =
-    validPasswordsInRange "271973" "785961"
+    validPasswordsInRangeWith Password.isValid "271973" "785961"
     |> List.length
     |> printfn "Number of valid passwords in range 271973-785961: %A"
+
+    validPasswordsInRangeWith Password.isValid2 "271973" "785961"
+    |> List.length
+    |> printfn "Number of valid passwords in range 271973-785961 that meet new criteria: %A"
 
     0 // return an integer exit code
