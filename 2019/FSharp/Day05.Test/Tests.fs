@@ -11,7 +11,11 @@ module Tuple2 =
 module Tuple3 =
     let toObjArray (x, y, z) = [| box x; box y; box z |]
 
-let ``Mode.fromInt test cases`` =
+module Tuple5 =
+    let toObjArray (v, w, x, y, z) = [| box v; box w; box x; box y; box z |]
+
+
+let ``Parameter.fromInt test cases`` =
     [
         0, Position
         1, Immediate
@@ -19,9 +23,9 @@ let ``Mode.fromInt test cases`` =
     |> Seq.map Tuple2.toObjArray
 
 [<Theory>]
-[<MemberData("Mode.fromInt test cases")>]
-let ``Mode.fromInt converts an integer into a parameter mode`` input expected =
-    ParameterMode.fromInt input =! expected
+[<MemberData("Parameter.fromInt test cases")>]
+let ``Parameter.fromInt converts an integer into a parameter mode`` input expected =
+    Parameter.fromInt input =! expected
 
 
 let ``Opcode.fromInt test cases`` =
@@ -38,6 +42,7 @@ let ``Opcode.fromInt test cases`` =
 [<MemberData("Opcode.fromInt test cases")>]
 let ``Opcode.fromInt converts an integer into an opcode`` input expected =
     OpCode.fromInt input =! expected
+
 
 let ``Opcode.instructionLength test cases`` =
     [
@@ -79,8 +84,47 @@ let ``Code.fromInt converts turns an integer into an instruction code`` (input, 
     Code.fromInt input =! expected
 
 
+let ``Instruction.at test cases`` = 
+  [
+    0, [| 1101;100;-1;4; 0 |], Add (4, Constant 100, Constant -1, WriteTo 4)
+    4, [| 1101;100;-1;3; 102;4;1;8; 0 |], Multiply (4, Constant 4, ReadFrom 1, WriteTo 8)
+    0, [| 3;4; 4;3; 0 |], Input (2, WriteTo 4)
+    2, [| 3;4; 104;3; 0 |], Output (2, Constant 3)
+    4, [| 1101;100;-1;4; 99 |], Halt ]
+  |> Seq.map Tuple3.toObjArray
+
+[<Theory>]
+[<MemberData("Instruction.at test cases")>]
+let ``Instruction.at produces the instruction in memory at the given index`` (index, memory, expected) =
+    test <@ memory |> Instruction.at index = expected @>
+
+
+let ``Instruction.exectuteWith test cases`` = 
+   [
+     Add (4, Constant 100, Constant -1, WriteTo 4),   [| 1101;100;-1;4; 0 |],            4, [| 1101;100;-1;4; 99 |],             None
+     Multiply (4, Constant 4, ReadFrom 1, WriteTo 8), [| 1101;100;-1;3; 102;4;1;8; 0 |], 4, [| 1101;100;-1;3; 102;4;1;8; 400 |], None
+     Input (2, WriteTo 4),                            [| 3;4; 4;3; 0 |],                 2, [| 3;4; 4;3; 42 |],                  None
+     Output (2, Constant 3),                          [| 3;4; 104;3; 0 |],               2, [| 3;4; 104;3; 0 |],                 Some 3
+     Output (2, ReadFrom 1),                          [| 3;4; 4;1; 0 |],                 2, [| 3;4; 4;1; 0 |],                   Some 4
+     Halt,                                            [| 1101;100;-1;4; 99 |],           0, [| 1101;100;-1;4; 99 |],             None ]
+   |> Seq.map Tuple5.toObjArray
+
+[<Theory>]
+[<MemberData("Instruction.exectuteWith test cases")>]
+let ``Instruction.executeWith produces expected length, modifies memory as expected, and produces expected output``
+    (instruction, memory, expectedLength, expectedMemoryAfterOperation, expectedIOOutput) =
+        let readio () = 42
+
+        let mutable actualIOOutput = None
+        let writeio (n : int) = actualIOOutput <- Some n
+
+    
+        test <@ instruction |> Instruction.executeWith readio writeio memory = expectedLength @>
+        expectedMemoryAfterOperation =! memory
+        expectedIOOutput =! actualIOOutput
+
 [<Fact>]
 let ``Computer.execute runs program in memory and returns the resulting memory`` =
     let program = [| 1101; 100; -1; 4; 0 |]
     let expected = [| 1101; 100; -1; 4; 99 |]
-    test <@ Computer.execute program = expected @>
+    test <@ Computer.run program = expected @>
