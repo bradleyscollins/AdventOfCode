@@ -15,21 +15,40 @@ module Memory =
     let readFrom index (memory : Memory) = memory.[index]
     let writeTo index value (memory : Memory) = memory.[index] <- value
 
-type OpCode = OpAdd | OpMultiply | OpInput | OpOutput | OpHalt
+type OpCode =
+| OpAdd
+| OpMultiply
+| OpInput
+| OpOutput
+| OpJumpIfTrue
+| OpJumpIfFalse
+| OpLessThan
+| OpEquals
+| OpHalt
 module OpCode =
-    let fromInt = function
-                  | 1 -> OpAdd
-                  | 2 -> OpMultiply
-                  | 3 -> OpInput
-                  | 4 -> OpOutput
-                  | _ -> OpHalt
+    let fromInt =
+        function
+        | 1 -> OpAdd
+        | 2 -> OpMultiply
+        | 3 -> OpInput
+        | 4 -> OpOutput
+        | 5 -> OpJumpIfTrue
+        | 6 -> OpJumpIfFalse
+        | 7 -> OpLessThan
+        | 8 -> OpEquals
+        | _ -> OpHalt
 
-    let instructionLength = function
-                            | OpAdd -> 4
-                            | OpMultiply -> 4
-                            | OpInput -> 2
-                            | OpOutput -> 2
-                            | OpHalt -> 1
+    let instructionLength =
+        function
+        | OpAdd -> 4
+        | OpMultiply -> 4
+        | OpInput -> 2
+        | OpOutput -> 2
+        | OpJumpIfTrue -> 3
+        | OpJumpIfFalse -> 3
+        | OpLessThan -> 4
+        | OpEquals -> 4
+        | OpHalt -> 1
 
 type Parameter = Position | Immediate
 module Parameter =
@@ -59,7 +78,7 @@ module Read =
     let cons x parameter =
         match parameter with
         | Immediate -> Constant x
-        | Position -> ReadFrom x
+        | Position  -> ReadFrom x
 
     let execute (memory : Memory) read =
         match read with
@@ -77,11 +96,27 @@ module Write =
         match write with
         | WriteTo index -> memory.[index] <- value
 
+type Move =
+| Increment of int
+| JumpTo    of int
+| Stop
+
+let FALSE = 0
+let TRUE  = 1
+type Bool = False | True
+let (|False|True|) = function
+                     | 0 -> False
+                     | _ -> True
+
 type Instruction =
-| Add of length : int * augend : Read * addend : Read * save : Write
-| Multiply of length : int * multiplier : Read * multiplicand : Read * save : Write
-| Input of length : int * save : Write
-| Output of length : int * load : Read
+| Add         of length : int * left : Read  * right : Read  * save : Write
+| Multiply    of length : int * left : Read  * right : Read  * save : Write
+| Input       of length : int * save : Write
+| Output      of length : int * load : Read
+| JumpIfTrue  of length : int * value : Read * jumpTo : Read
+| JumpIfFalse of length : int * value : Read * jumpTo : Read
+| LessThan    of length : int * left : Read  * right : Read  * save : Write
+| Equals      of length : int * left : Read  * right : Read  * save : Write
 | Halt
 module Instruction =
     let at index (memory : Memory) =
@@ -91,18 +126,16 @@ module Instruction =
 
         match opcode with
         | OpAdd ->
-            let augend = mode1 |> Read.cons segment.[1]
-            let addend = mode2 |> Read.cons segment.[2]
-            let save   = mode3 |> Write.cons segment.[3]
-
-            Add (length, augend, addend, save)
+            let left  = mode1 |> Read.cons segment.[1]
+            let right = mode2 |> Read.cons segment.[2]
+            let save  = mode3 |> Write.cons segment.[3]
+            Add (length, left, right, save)
 
         | OpMultiply ->
-            let multiplier   = mode1 |> Read.cons segment.[1]
-            let multiplicand = mode2 |> Read.cons segment.[2]
-            let save         = mode3 |> Write.cons segment.[3]
-
-            Multiply (length, multiplier, multiplicand, save)
+            let left  = mode1 |> Read.cons segment.[1]
+            let right = mode2 |> Read.cons segment.[2]
+            let save  = mode3 |> Write.cons segment.[3]
+            Multiply (length, left, right, save)
 
         | OpInput ->
             let save = mode1 |> Write.cons segment.[1]
@@ -112,54 +145,110 @@ module Instruction =
             let load = mode1 |> Read.cons segment.[1]
             Output (length, load)
 
+        | OpJumpIfTrue ->
+            let value  = mode1 |> Read.cons segment.[1]
+            let jumpTo = mode2 |> Read.cons segment.[2]
+            JumpIfTrue (length, value, jumpTo)
+
+        | OpJumpIfFalse ->
+            let value  = mode1 |> Read.cons segment.[1]
+            let jumpTo = mode2 |> Read.cons segment.[2]
+            JumpIfFalse (length, value, jumpTo)
+
+        | OpLessThan ->
+            let left  = mode1 |> Read.cons segment.[1]
+            let right = mode2 |> Read.cons segment.[2]
+            let save  = mode3 |> Write.cons segment.[3]
+            LessThan (length, left, right, save)
+            
+        | OpEquals ->
+            let left  = mode1 |> Read.cons segment.[1]
+            let right = mode2 |> Read.cons segment.[2]
+            let save  = mode3 |> Write.cons segment.[3]
+            Equals (length, left, right, save)
+
         | _ -> Halt
 
-    let executeWith (readio : ReadIO) (writeio : WriteIO) (memory : Memory) instruction =
+    let executeWith (readIO : ReadIO) (writeIO : WriteIO) (memory : Memory) instruction =
         match instruction with
-        | Add (length, augend, addend, save) ->
-            let x = augend |> Read.execute memory
-            let y = addend |> Read.execute memory
+        | Add (length, left, right, save) ->
+            let x = left  |> Read.execute memory
+            let y = right |> Read.execute memory
             save |> Write.execute memory (x + y)
-            length
-        | Multiply (length, multiplier, multiplicand, save) ->
-            let x = multiplier |> Read.execute memory
-            let y = multiplicand |> Read.execute memory
+            Increment length
+
+        | Multiply (length, left, right, save) ->
+            let x = left  |> Read.execute memory
+            let y = right |> Read.execute memory
             save |> Write.execute memory (x * y)
-            length
+            Increment length
+
         | Input (length, save) ->
-            let input = readio ()
+            let input = readIO ()
             save |> Write.execute memory input
-            length
+            Increment length
+
         | Output (length, load) ->
             let output = load |> Read.execute memory
-            writeio output
-            length
-        | Halt -> 0
+            writeIO output
+            Increment length
+
+        | JumpIfTrue (length, value, jumpTo) ->
+            let x     = value  |> Read.execute memory
+            let index = jumpTo |> Read.execute memory
+            match x with
+            | True -> JumpTo index
+            | _    -> Increment length
+
+        | JumpIfFalse (length, value, jumpTo) ->
+            let x     = value  |> Read.execute memory
+            let index = jumpTo |> Read.execute memory
+            match x with
+            | False -> JumpTo index
+            | _     -> Increment length
+
+        | LessThan (length, left, right, save) ->
+            let x = left  |> Read.execute memory
+            let y = right |> Read.execute memory
+            let result = if x < y then TRUE else FALSE
+            save |> Write.execute memory result
+            Increment length
+
+        | Equals (length, left, right, save) ->
+            let x = left  |> Read.execute memory
+            let y = right |> Read.execute memory
+            let result = if x = y then TRUE else FALSE
+            save |> Write.execute memory result
+            Increment length
+
+        | Halt -> Stop
 
 
 module Computer =
-    let run program =
-        let memory = program
-
-        let readio () =
-            printf "Input: "
-            Console.ReadLine () |> int
-
-        let writeio = printfn "Output: %d"
-
-        let execute = Instruction.executeWith readio writeio memory
+    let runWith readIO writeIO memory = 
+        let execute = Instruction.executeWith readIO writeIO memory
 
         let rec run' programCounter =
-            let instruction = memory |> Instruction.at programCounter
+            let move = memory
+                       |> Instruction.at programCounter
+                       |> execute
 
-            match instruction with
-            | Halt -> ()
-            | _ ->
-                let length = execute instruction
-                run' (programCounter + length)
+            match move with
+            | Stop -> ()
+            | Increment n -> run' (programCounter + n)
+            | JumpTo programCounter' -> run' programCounter'
 
         run' 0
         memory
+
+    let run program =
+        let readIO () =
+            printf "Input: "
+            Console.ReadLine () |> int
+
+        let writeIO = printfn "Output: %d"
+
+        runWith readIO writeIO program
 
 [<EntryPoint>]
 let main argv =
