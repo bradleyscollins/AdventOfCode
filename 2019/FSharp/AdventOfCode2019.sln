@@ -19,9 +19,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Day04", "Day04\Day04.fsproj
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Day04.Test", "Day04.Test\Day04.Test.fsproj", "{F598AD41-DC5F-4BD3-8356-B34B7AA3CED0}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Day05", "Day05\Day05.fsproj", "{C805C894-CF87-4A5A-A75A-40D58DFEB35E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Day05", "Day05\Day05.fsproj", "{C805C894-CF87-4A5A-A75A-40D58DFEB35E}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Day05.Test", "Day05.Test\Day05.Test.fsproj", "{27B7ADC4-7A41-4FAB-8C50-ADDF14E43578}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Day05.Test", "Day05.Test\Day05.Test.fsproj", "{27B7ADC4-7A41-4FAB-8C50-ADDF14E43578}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
