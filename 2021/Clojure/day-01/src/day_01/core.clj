@@ -111,19 +111,33 @@
 ;;
 ;; Consider sums of a three-measurement sliding window. How many sums are larger
 ;; than the previous sum?
-;; ANSWER: 
+;; ANSWER: 1761
 
 (ns day-01.core
   (:gen-class)
   (:require [clojure.java.io :as io]))
 
-(defn count-depth-increases
-  "Takes a list of depth measurements and counts the number of times the depth increases from one measurement to the next"
+(defn count-increases-in-depth
+  "Takes a list of depth measurements and counts the number of times the depth
+   increases from one measurement to the next"
   [depths]
   (->>
-    (map vector depths (drop 1 depths))
+    (partition 2 1 depths)
     (filter #(apply < %1))
     count))
+
+(defn count-increases-in-sum-of-depth-windows
+  "Takes a window size and a list of depth measurements, partitions the
+   measurements into a sliding window of measurements, sums the measurements in
+   each window, and counts the number of times the value increases from one
+   sum to the next"
+  [window-size depths]
+  (->>
+   (partition window-size 1 depths)
+   (map #(apply + %1))
+   (partition 2 1)
+   (filter #(apply < %1))
+   count))
 
 (def input-file
   (io/resource "input.txt"))
@@ -138,5 +152,9 @@
   "I don't do a whole lot ... yet."
   [& args]
   (let [depths (read-input)]
-    println (str "The number of depth increases: "
-                 (count-depth-increases depths))))
+    (println (str "Depth increased "
+                  (count-increases-in-depth depths)
+                  " times"))
+    (println (str "Sum of depths in a sliding window of 3 increased "
+                  (count-increases-in-sum-of-depth-windows 3 depths)
+                  " times"))))
