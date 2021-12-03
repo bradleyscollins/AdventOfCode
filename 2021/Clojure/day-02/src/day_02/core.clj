@@ -1,4 +1,6 @@
 ;; --- Day 2: Dive! ---
+;; https://adventofcode.com/2021/day/2
+;; Input: https://adventofcode.com/2021/day/2/input
 ;;
 ;; Now, you need to figure out how to pilot this thing.
 ;;
