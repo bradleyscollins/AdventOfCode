@@ -78,7 +78,7 @@
 ;; Using this new interpretation of the commands, calculate the horizontal
 ;; position and depth you would have after following the planned course. What do
 ;; you get if you multiply your final horizontal position by your final depth?
-;; ANSWER: 
+;; ANSWER: 2101031224
 
 (ns day-02.core
   (:gen-class)
@@ -98,20 +98,37 @@
 
 (defn move [[x y] [direction distance]]
   (case direction
-    :forward [(+ x distance) y             ]
+    :forward [(+ x distance) y]
     :down    [x              (+ y distance)]
     :up      [x              (- y distance)]
-             [x              y             ]))
+    [x              y]))
 
 (defn navigate [init-position commands]
   (reduce move init-position commands))
+
+(defn move-2 [[x y aim] [cmd n]]
+  (case cmd
+    :down    [x       y               (+ aim n)]
+    :up      [x       y               (- aim n)]
+    :forward [(+ x n) (+ y (* aim n)) aim]
+             [x       y               aim]))
+
+(defn navigate-2 [init-state commands]
+  (reduce move-2 init-state commands))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (let [lines    (read-input)
-        commands (map to-command lines)
-        init-position [0 0]
-        [x y] (navigate init-position commands)]
-    (printf "Final position is (x: %d, y: %d)%n" x y)
-    (printf "Position product is %d × %d = %d%n" x y (* x y))))
+        commands (map to-command lines)]
+    (let [init-position [0 0]
+          [x y]         (navigate init-position commands)]
+      (println "--- Part 1 ---")
+      (printf "Final position is (x: %d, y: %d)%n" x y)
+      (printf "Position product is %d × %d = %d%n" x y (* x y)))
+    (let [init-state [0 0 0]
+          [x y aim]  (navigate-2 init-state commands)]
+      (newline)
+      (println "--- Part 2 ---")
+      (printf "Final state is (x: %d, y: %d, aim: %d)%n" x y aim)
+      (printf "Position product is %d × %d = %d%n" x y (* x y)))))

@@ -19,5 +19,9 @@
                      [:forward 2]))
 
 (deftest test-navigate
-  (testing "Converts a line of input to a command"
+  (testing "Navigates the sub with commands according to the instructions in Part 1"
     (is (= [15 10] (navigate [0 0] test-commands)))))
+
+(deftest test-navigate-2
+  (testing "Navigates the sub with commands according to the instructions in Part 2"
+    (is (= [15 60 10] (navigate-2 [0 0 0] test-commands)))))
