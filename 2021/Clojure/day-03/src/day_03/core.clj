@@ -53,6 +53,77 @@
 ;; and epsilon rate, then multiply them together. What is the power consumption
 ;; of the submarine? (Be sure to represent your answer in decimal, not binary.)
 ;; ANSWER: 3901196
+;;
+;;
+;; --- Part Two ---
+;;
+;; Next, you should verify the life support rating, which can be determined by
+;; multiplying the oxygen generator rating by the CO2 scrubber rating.
+;;
+;; Both the oxygen generator rating and the CO2 scrubber rating are values that
+;; can be found in your diagnostic report - finding them is the tricky part.
+;; Both values are located using a similar process that involves filtering out
+;; values until only one remains. Before searching for either rating value,
+;; start with the full list of binary numbers from your diagnostic report and
+;; consider just the first bit of those numbers. Then:
+;;
+;; - Keep only numbers selected by the bit criteria for the type of rating value
+;;   for which you are searching. Discard numbers which do not match the bit
+;;   criteria.
+;; - If you only have one number left, stop; this is the rating value for which
+;;   you are searching.
+;; - Otherwise, repeat the process, considering the next bit to the right.
+;;
+;; The bit criteria depends on which type of rating value you want to find:
+;;
+;; - To find oxygen generator rating, determine the most common value (0 or 1)
+;;   in the current bit position, and keep only numbers with that bit in that
+;;   position. If 0 and 1 are equally common, keep values with a 1 in the
+;;   position being considered.
+;; - To find CO2 scrubber rating, determine the least common value (0 or 1) in
+;;   the current bit position, and keep only numbers with that bit in that
+;;   position. If 0 and 1 are equally common, keep values with a 0 in the
+;;   position being considered.
+;;
+;; For example, to determine the oxygen generator rating value using the same
+;; example diagnostic report from above:
+;;
+;; - Start with all 12 numbers and consider only the first bit of each number.
+;;   There are more 1 bits (7) than 0 bits (5), so keep only the 7 numbers with
+;;   a 1 in the first position: 11110, 10110, 10111, 10101, 11100, 10000, and
+;;   11001.
+;; - Then, consider the second bit of the 7 remaining numbers: there are more 0
+;;   bits (4) than 1 bits (3), so keep only the 4 numbers with a 0 in the second
+;;   position: 10110, 10111, 10101, and 10000.
+;; - In the third position, three of the four numbers have a 1, so keep those
+;;   three: 10110, 10111, and 10101.
+;; - In the fourth position, two of the three numbers have a 1, so keep those
+;;   two: 10110 and 10111.
+;; - In the fifth position, there are an equal number of 0 bits and 1 bits (one
+;;   each). So, to find the oxygen generator rating, keep the number with a 1 in
+;;   that position: 10111.
+;; - As there is only one number left, stop; the oxygen generator rating is
+;;   10111, or 23 in decimal.
+;;
+;; Then, to determine the CO2 scrubber rating value from the same example above:
+;;
+;; - Start again with all 12 numbers and consider only the first bit of each
+;;   number. There are fewer 0 bits (5) than 1 bits (7), so keep only the 5
+;;   numbers with a 0 in the first position: 00100, 01111, 00111, 00010, and
+;;   01010.
+;; - Then, consider the second bit of the 5 remaining numbers: there are fewer 1
+;;   bits (2) than 0 bits (3), so keep only the 2 numbers with a 1 in the second
+;;   position: 01111 and 01010.
+;; - In the third position, there are an equal number of 0 bits and 1 bits (one
+;;   each). So, to find the CO2 scrubber rating, keep the number with a 0 in
+;;   that position: 01010.
+;; - As there is only one number left, stop; the CO2 scrubber rating is 01010,
+;;   or 10 in decimal.
+;;
+;; Finally, to find the life support rating, multiply the oxygen generator rating (23) by the CO2 scrubber rating (10) to get 230.
+;;
+;; Use the binary numbers in your diagnostic report to calculate the oxygen generator rating and CO2 scrubber rating, then multiply them together. What is the life support rating of the submarine? (Be sure to represent your answer in decimal, not binary.)
+;; ANSWER: 4412188
 
 (ns day-03.core
   (:gen-class)
@@ -73,10 +144,9 @@
        (map #(Integer/parseInt %1))))
 
 (defn columnize
-  "Converts a list of inputs into columns of digits"
-  [inputs]
-  (->> (map digitize inputs)
-       (apply map list)))
+  "Converts a list of digitized inputs into columns of digits"
+  [digitized-inputs]
+  (apply map list digitized-inputs))
 
 (defn histograms
   "Converts columns into histograms"
@@ -92,6 +162,7 @@
   "Gets the key of the map entry with the least value. If there a multiple, the last one is returned."
   [m]
   (key (apply min-key val m)))
+
 (defn parse-binary [s] (Integer/parseInt s 2))
 
 (defn calc-gamma-rate
@@ -113,15 +184,57 @@
   [gamma-rate epsilon-rate]
   (* gamma-rate epsilon-rate))
 
+(defn calc-o₂-generator-rating
+  "Calculates the O₂ generator rating from a list of inputs"
+  [inputs]
+  (loop [index   0
+         inputs' inputs]
+    (if (= 1 (count inputs'))
+      ((comp parse-binary str/join first) inputs')
+      (let [grouped      (group-by #(nth %1 index) inputs')
+            with-0       (get grouped 0)
+            with-1       (get grouped 1)
+            count-with-0 (count with-0)
+            count-with-1 (count with-1)
+            remaining    (if (> count-with-0 count-with-1) with-0 with-1)]
+        (recur (inc index) remaining)))))
+
+(defn calc-co₂-scrubber-rating
+  "Calculates the CO₂ scrubber rating from a list of inputs"
+  [inputs]
+  (loop [index   0
+         inputs' inputs]
+    (if (= 1 (count inputs'))
+      ((comp parse-binary str/join first) inputs')
+      (let [grouped      (group-by #(nth %1 index) inputs')
+            with-0       (get grouped 0)
+            with-1       (get grouped 1)
+            count-with-0 (count with-0)
+            count-with-1 (count with-1)
+            remaining    (if (< count-with-1 count-with-0) with-1 with-0)]
+        (recur (inc index) remaining)))))
+
+(defn calc-life-support-rating
+  "Calculates life support rating from a O₂ generator rating & an CO₂ scrubber rating"
+  [o₂-generator-rating co₂-scrubber-rating]
+  (* o₂-generator-rating co₂-scrubber-rating))
+
 (defn -main
   "Read inputs and calculate the submarine's power consumption"
   [& args]
-  (let [inputs (read-input)
+  (let [lines (read-input)
+        inputs (map digitize lines)
         columns (columnize inputs)
         histograms (histograms columns)
         gamma-rate (calc-gamma-rate histograms)
         epsilon-rate (calc-epsilon-rate histograms)
-        power-consumption (calc-power-consumption gamma-rate epsilon-rate)]
-    (println "Gamma rate (γ):            " gamma-rate)
-    (println "Epsilon rate (ε):          " epsilon-rate)
-    (println "Power consumption (γ × ε): " power-consumption)))
+        power-consumption (calc-power-consumption gamma-rate epsilon-rate)
+        o₂-generator-rating (calc-o₂-generator-rating inputs)
+        co₂-scrubber-rating (calc-co₂-scrubber-rating inputs)
+        life-support-rating (calc-life-support-rating o₂-generator-rating co₂-scrubber-rating)]
+    (println "Gamma rate (γ):                 " gamma-rate)
+    (println "Epsilon rate (ε):               " epsilon-rate)
+    (println "Power consumption (γ × ε):      " power-consumption)
+    (println "O₂ generator rating:            " o₂-generator-rating)
+    (println "CO₂ scrubber rating:            " co₂-scrubber-rating)
+    (println "Life support rating (O₂ × CO₂): " life-support-rating)))

@@ -24,13 +24,13 @@
                    "01010"))
 
 (deftest test-columnize
-  (testing "Turns a list of inputs into columns"
+  (testing "Turns a list of digitized inputs into columns"
     (is (= (list '(0 1 1 1 1 0 0 1 1 1 0 0)
                  '(0 1 0 0 0 1 0 1 0 1 0 1)
                  '(1 1 1 1 1 1 1 1 0 0 0 0)
                  '(0 1 1 1 0 1 1 0 0 0 1 1)
                  '(0 0 0 1 1 1 1 0 0 1 0 0))
-           (columnize test-inputs)))))
+           (columnize (map digitize test-inputs))))))
 
 (deftest test-histograms
   (testing "Converts columns into histograms"
@@ -39,7 +39,7 @@
                  {0 4, 1 8}
                  {0 5, 1 7}
                  {0 7, 1 5})
-           (histograms (columnize test-inputs))))))
+           (histograms (columnize (map digitize test-inputs)))))))
 
 (deftest test-key-of-max-value
   (testing "Gets the key of the map entry with the greatest value"
@@ -60,9 +60,21 @@
 (deftest test-calc-gamma-rate
   (testing "Converts column histograms into a gamma rate"
     (is (= 22
-           (calc-gamma-rate (histograms (columnize test-inputs)))))))
+           (calc-gamma-rate (histograms (columnize (map digitize test-inputs))))))))
 
 (deftest test-calc-epsilon-rate
   (testing "Converts column histograms into an epsilon rate"
     (is (= 9
-           (calc-epsilon-rate (histograms (columnize test-inputs)))))))
+           (calc-epsilon-rate (histograms (columnize (map digitize test-inputs))))))))
+
+(deftest test-calc-o₂-generator-rating
+  (testing "Calculates the O₂ generator rating from a list of inputs"
+    (let [inputs (map digitize test-inputs)]
+      (is (= 23
+             (calc-o₂-generator-rating inputs))))))
+
+(deftest test-calc-co₂-scrubber-rating
+  (testing "Calculates the CO₂ scrubber rating from a list of inputs"
+    (let [inputs (map digitize test-inputs)]
+      (is (= 10
+             (calc-co₂-scrubber-rating inputs))))))
