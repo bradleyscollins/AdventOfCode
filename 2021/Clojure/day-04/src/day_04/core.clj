@@ -78,6 +78,26 @@
 ;; To guarantee victory against the giant squid, figure out which board will win
 ;; first. What will your final score be if you choose that board?
 ;; ANSWER: 32844
+;;
+;;
+;; --- Part Two ---
+;;
+;; On the other hand, it might be wise to try a different strategy: let the
+;; giant squid win.
+;;
+;; You aren't sure how many bingo boards a giant squid could play at once, so
+;; rather than waste time counting its arms, the safe thing to do is to figure
+;; out which board will win last and choose that one. That way, no matter which
+;; boards it picks, it will win for sure.
+;;
+;; In the above example, the second board is the last to win, which happens
+;; after 13 is eventually called and its middle column is completely marked. If
+;; you were to keep playing until this point, the second board would have a sum
+;; of unmarked numbers equal to 148 for a final score of 148 * 13 = 1924.
+;;
+;; Figure out which board will win last. Once it wins, what would its final
+;; score be?
+;; ANSWER: 4920
 
 (ns day-04.core
   (:gen-class)
@@ -89,12 +109,6 @@
 (defn board-init [rows]
   (->> (flatten rows)
        (mapv #(vector %1 :clear))))
-
-(defn board-row [index]
-  (inc (quot index board-size)))
-
-(defn board-col [index]
-  (inc (mod index board-size)))
 
 (defn board-mark [board number]
   (replace {[number :clear] [number :marked]} board))
@@ -127,6 +141,10 @@
        (filter unmarked?)
        (map first)))
 
+(defn board-score [board last-number-called]
+  (* last-number-called
+     (apply + (board-unmarked-numbers board))))
+
 (defn all-cells-marked? [row-or-col]
   (every? marked? row-or-col))
 
@@ -135,35 +153,32 @@
        (some all-cells-marked?)))
 
 (defn game-init [boards numbers]
-  {:winner         nil
+  {:winners        []
    :numbers-called '()
    :boards         boards
    :numbers        numbers})
 
 (defn game-next [game]
-  (let [numbers        (game :numbers)
-        boards         (game :boards)
-        numbers-called (game :numbers-called)
-        number-drawn (first numbers)
-        updated-boards       (map #(board-mark %1 number-drawn) boards)]
+  (let [numbers              (game :numbers)
+        number-drawn         (first numbers)
+        boards               (->> (game :boards)
+                                  (map #(board-mark %1 number-drawn)))
+        bingos               (filter bingo? boards)
+        new-winners          (map (fn [brd] (vector brd number-drawn)) bingos)
+        boards-still-in-play (filter (comp not bingo?) boards)]
     (assoc game
-           :winner         (first (filter bingo? updated-boards))
-           :numbers-called (cons number-drawn numbers-called)
-           :boards         updated-boards
+           :winners        (concat (game :winners) new-winners)
+           :numbers-called (cons number-drawn (game :numbers-called))
+           :boards         boards-still-in-play
            :numbers        (rest numbers))))
 
-(defn game-last-number-called [game]
-  (first (game :numbers-called)))
-
-(defn game-score [game]
-  (let [last-number-called (game-last-number-called game)
-        unmarked-numbers   (board-unmarked-numbers (game :winner))]
-    (* last-number-called
-       (apply + unmarked-numbers))))
+(defn game-finished? [game]
+  (or (empty? (game :boards))
+      (empty? (game :numbers))))
 
 (defn play-game [boards numbers]
   (loop [game (game-init boards numbers)]
-    (if (game :winner)
+    (if (game-finished? game)
       game
       (recur (game-next game)))))
 
@@ -195,11 +210,11 @@
 (defn -main
   "Advent of Code, Day 4"
   [& args]
-  (let [input              (lines->domain (read-input))
-        game               (play-game (input :boards) (input :numbers))
-        winner             (game :winner)
-        unmarked-numbers   (board-unmarked-numbers winner)
-        last-number-called (first (game :numbers-called))]
-    (println "Winning board unmarked numbers: " unmarked-numbers)
-    (println "Last number called:             " last-number-called)
-    (println "Winning board score:            " (game-score game))))
+  (let [input                      (lines->domain (read-input))
+        game                       (play-game (input :boards) (input :numbers))
+        [board last-number-called] (last (game :winners))]
+    (println "Unmarked numbers on last winning board:    "
+             (board-unmarked-numbers board))
+    (println "Last number called for last winning board: " last-number-called)
+    (println "Score of last winning board:               "
+             (board-score board last-number-called))))

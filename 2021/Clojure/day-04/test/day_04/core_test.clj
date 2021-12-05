@@ -24,62 +24,6 @@
    "22 11 13  6  5"
    " 2  0 12  3  7"])
 
-(deftest board-row-test
-  (testing "Converts an index to a row"
-    (is (= 1 (board-row  0)))
-    (is (= 1 (board-row  1)))
-    (is (= 1 (board-row  2)))
-    (is (= 1 (board-row  3)))
-    (is (= 1 (board-row  4)))
-    (is (= 2 (board-row  5)))
-    (is (= 2 (board-row  6)))
-    (is (= 2 (board-row  7)))
-    (is (= 2 (board-row  8)))
-    (is (= 2 (board-row  9)))
-    (is (= 3 (board-row 10)))
-    (is (= 3 (board-row 11)))
-    (is (= 3 (board-row 12)))
-    (is (= 3 (board-row 13)))
-    (is (= 3 (board-row 14)))
-    (is (= 4 (board-row 15)))
-    (is (= 4 (board-row 16)))
-    (is (= 4 (board-row 17)))
-    (is (= 4 (board-row 18)))
-    (is (= 4 (board-row 19)))
-    (is (= 5 (board-row 20)))
-    (is (= 5 (board-row 21)))
-    (is (= 5 (board-row 22)))
-    (is (= 5 (board-row 23)))
-    (is (= 5 (board-row 24)))))
-
-(deftest board-col-test
-  (testing "Converts an index to a col"
-    (is (= 1 (board-col  0)))
-    (is (= 2 (board-col  1)))
-    (is (= 3 (board-col  2)))
-    (is (= 4 (board-col  3)))
-    (is (= 5 (board-col  4)))
-    (is (= 1 (board-col  5)))
-    (is (= 2 (board-col  6)))
-    (is (= 3 (board-col  7)))
-    (is (= 4 (board-col  8)))
-    (is (= 5 (board-col  9)))
-    (is (= 1 (board-col 10)))
-    (is (= 2 (board-col 11)))
-    (is (= 3 (board-col 12)))
-    (is (= 4 (board-col 13)))
-    (is (= 5 (board-col 14)))
-    (is (= 1 (board-col 15)))
-    (is (= 2 (board-col 16)))
-    (is (= 3 (board-col 17)))
-    (is (= 4 (board-col 18)))
-    (is (= 5 (board-col 19)))
-    (is (= 1 (board-col 20)))
-    (is (= 2 (board-col 21)))
-    (is (= 3 (board-col 22)))
-    (is (= 4 (board-col 23)))
-    (is (= 5 (board-col 24)))))
-
 (def test-numbers
   '(7 4 9 5 11 17 23 2 0 14 21 24 10 16 13 6 15 25 12 22 18 20 8 19 3 26 1))
 
@@ -227,7 +171,7 @@
 
 (deftest game-next-test
   (testing "Draws a number and marks all board cells containing that number"
-    (is (= {:winner         nil
+    (is (= {:winners        []
             :numbers-called (reverse (take 1 test-numbers))
             :boards         (list
                              (board-mark test-board-1 7)
@@ -236,27 +180,14 @@
             :numbers        (drop 1 test-numbers)}
            (game-next (game-init test-boards test-numbers))))))
 
-(deftest play-game-test
-  (testing "Plays a full bingo game"
-    (let [test-numbers-drawn      '(7 4 9 5 11 17 23 2 0 14 21 24)
-          expected-numbers-called (reverse test-numbers-drawn)
-          expected-final-board-1  (board-mark-all test-board-1 test-numbers-drawn)
-          expected-final-board-2  (board-mark-all test-board-2 test-numbers-drawn)
-          expected-final-board-3  (board-mark-all test-board-3 test-numbers-drawn)
-          expected-boards         (list expected-final-board-1 expected-final-board-2 expected-final-board-3)
-          expected-numbers        (drop (count test-numbers-drawn) test-numbers)]
-      (is (= {:winner         expected-final-board-3
-              :numbers-called expected-numbers-called
-              :boards         expected-boards
-              :numbers        expected-numbers}
-             (play-game test-boards test-numbers))))))
-
 (deftest lines->domain-test
   (testing "Loads inputs and translates them to the domain"
     (is (= {:numbers test-numbers, :boards test-boards}
            (lines->domain test-input-lines)))))
 
-(deftest game-score-test
-  (testing "Plays a full bingo game and calculates the score"
-    (is (= 4512
-           (game-score (play-game test-boards test-numbers))))))
+(deftest board-score-test
+  (testing "Plays a full bingo game and calculates the score of the last wining board"
+    (let [game                       (play-game test-boards test-numbers)
+          [board last-number-called] (last (game :winners))]
+      (is (= 1924
+             (board-score board last-number-called))))))
