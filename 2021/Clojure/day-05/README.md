@@ -1,44 +1,46 @@
-# day-05
+# [Day 5: Hydrothermal Venture](https://adventofcode.com/2021/day/5)
 
-FIXME: description
+[Puzzle Input](https://adventofcode.com/2021/day/5/input)
 
-## Installation
+You come across a field of [hydrothermal vents](https://en.wikipedia.org/wiki/Hydrothermal_vent) on the ocean floor! These vents constantly produce large, opaque clouds, so it would be best to avoid them if possible.
 
-Download from http://example.com/FIXME.
+They tend to form in **lines**; the submarine helpfully produces a list of nearby lines of vents (your puzzle input) for you to review. For example:
 
-## Usage
+    0,9 -> 5,9
+    8,0 -> 0,8
+    9,4 -> 3,4
+    2,2 -> 2,1
+    7,0 -> 7,4
+    6,4 -> 2,0
+    0,9 -> 2,9
+    3,4 -> 1,4
+    0,0 -> 8,8
+    5,5 -> 8,2
 
-FIXME: explanation
+Each line of vents is given as a line segment in the format `x1,y1 -> x2,y2` where `x1,y1` are the coordinates of one end the line segment and `x2,y2` are the coordinates of the other end. These line segments include the points at both ends. In other words:
 
-    $ java -jar day-05-0.1.0-standalone.jar [args]
+- An entry like `1,1 -> 1,3` covers points `1,1`, `1,2`, and `1,3`.
+- An entry like `9,7 -> 7,7` covers points `9,7`, `8,7`, and `7,7`.
 
-## Options
+For now, **only consider horizontal and vertical lines**: lines where either `x1 = x2` or `y1 = y2.`
 
-FIXME: listing of options this app accepts.
+So, the horizontal and vertical lines from the above list would produce the following diagram:
 
-## Examples
+    .......1..
+    ..1....1..
+    ..1....1..
+    .......1..
+    .112111211
+    ..........
+    ..........
+    ..........
+    ..........
+    222111....
 
-...
+In this diagram, the top left corner is `0,0` and the bottom right corner is `9,9`. Each position is shown as **the number of lines which cover that point** or `.` if no line covers that point. The top-left pair of `1`s, for example, comes from `2,2 -> 2,1`; the very bottom row is formed by the overlapping lines `0,9 -> 5,9` and `0,9 -> 2,9`.
 
-### Bugs
+To avoid the most dangerous areas, you need to determine **the number of points where at least two lines overlap**. In the above example, this is anywhere in the diagram with a `2` or larger - a total of **`5`** points.
 
-...
+Consider only horizontal and vertical lines. **At how many points do at least two lines overlap?**
 
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2021 FIXME
-
-This program and the accompanying materials are made available under the
-terms of the Eclipse Public License 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0.
-
-This Source Code may also be made available under the following Secondary
-Licenses when the conditions for such availability set forth in the Eclipse
-Public License, v. 2.0 are satisfied: GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or (at your
-option) any later version, with the GNU Classpath Exception which is available
-at https://www.gnu.org/software/classpath/license.html.
+Your puzzle answer was **`6841`**.
