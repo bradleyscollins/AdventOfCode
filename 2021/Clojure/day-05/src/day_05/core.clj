@@ -43,7 +43,12 @@
           xs         (range x₁ end step)]
       (mapv #(vector %1 y₁) xs))
 
-    :else []))
+    :else
+    (let [[step-x end-x] (if (< x₁ x₂) [1 (inc x₂)] [-1 (dec x₂)])
+          [step-y end-y] (if (< y₁ y₂) [1 (inc y₂)] [-1 (dec y₂)])
+          xs         (range x₁ end-x step-x)
+          ys         (range y₁ end-y step-y)]
+      (mapv #(vector %1 %2) xs ys))))
 
 (defn grid-mark [grid point]
   (let [k   (point->str point)
@@ -56,12 +61,20 @@
 (defn -main
   "Checks grid for overlaps"
   [& args]
-  (let [lines                     (map str->line (read-input))
-        horizontals-and-verticals (filter line-horizontal-or-vertical? lines)
-        points-of-interest        (mapcat line->points horizontals-and-verticals)
-        init-grid                 {}
-        final-grid                (reduce grid-mark init-grid points-of-interest)
-        points-with-overlap       (grid-points-with-overlap final-grid)]
+  (let [lines    (map str->line (read-input))
+        hv-lines (filter line-horizontal-or-vertical? lines)
+
+        hv-points-of-interest  (mapcat line->points hv-lines)
+        hv-init-grid           {}
+        hv-final-grid          (reduce grid-mark hv-init-grid hv-points-of-interest)
+        hv-points-with-overlap (grid-points-with-overlap hv-final-grid)
+
+        points-of-interest  (mapcat line->points lines)
+        init-grid           {}
+        final-grid          (reduce grid-mark init-grid points-of-interest)
+        points-with-overlap (grid-points-with-overlap final-grid)]
     
-    (println "Points with overlap: " points-with-overlap)
-    (println "Number of points with overlap: " (count points-with-overlap))))
+    (println "Number of points with overlap among horizontal & vertical lines: "
+             (count hv-points-with-overlap))
+    (println "Number of points with overlap among all lines: "
+             (count points-with-overlap))))
