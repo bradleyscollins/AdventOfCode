@@ -10,35 +10,34 @@
   (with-open [rdr (io/reader input-file)]
     (doall (line-seq rdr))))
 
-(defn str->population [s]
-  (->> (str/split s #",")
-       (map #(Integer/parseInt %1))))
+(defn str->fish [s]
+  (map #(Integer/parseInt %1) (str/split s #",")))
 
-(defn ready-to-spawn? [fish]
-  (zero? fish))
+(defn fish->population [fish]
+  (reduce-kv #(assoc %1 %2 %3) (vec (repeat 9 0)) (frequencies fish)))
 
-(defn spawn [population-before-aging]
-  (let [fish-ready-to-spawn (filter ready-to-spawn? population-before-aging)]
-    (repeat (count fish-ready-to-spawn) 8)))
-
-(defn age-fish [fish]
-  (if (ready-to-spawn? fish) 6 (dec fish)))
+(def adult-reset-idx 6)
+(defn rotate-v [v]
+  (if (> 1 (count v))
+    v
+    (conj (vec (rest v)) (first v))))
 
 (defn age [population]
-  (mapv age-fish population))
+  (let [ready-to-spawn (first population)
+        rotated        (rotate-v population)]
+    (assoc rotated
+           adult-reset-idx
+           (+ (nth rotated adult-reset-idx) ready-to-spawn))))
 
 (defn lanternfish [population days]
   (if (zero? days)
-    population
-    (let [spawned (spawn population)
-          aged    (age   population)]
-      (lanternfish (into aged spawned) (dec days)))))
+    (apply + population)
+    (lanternfish (age population) (dec days))))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Simulates a lanternfish population"
   [& args]
-  (let [init-population  (vec (mapcat str->population (read-input)))
-        final-population (lanternfish init-population 80)]
-    (println "Intial population: " init-population)
-    (println "Final population:  " final-population)
-    (println "Number of fish:    " (count final-population))))
+  (let [fish       (str->fish (first (read-input)))
+        population (fish->population fish)]
+    (printf "Number of fish after %d days: %d%n" 80 (lanternfish population 80))
+    (printf "Number of fish after %d days: %d%n" 256 (lanternfish population 256))))
