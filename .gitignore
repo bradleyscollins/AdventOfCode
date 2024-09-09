@@ -62,3 +62,7 @@ bin/
 
 # Node
 node_modules/
+
+# Racket
+compiled/
+*.bak
